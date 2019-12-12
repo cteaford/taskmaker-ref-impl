@@ -1,0 +1,34 @@
+plugins {
+    id "com.moowork.node" version "1.3.1"
+    id 'java'
+}
+
+def jsBuildDir = project.buildDir.absolutePath
+def jsProjectDir = project.projectDir.absolutePath
+def jsSourceDir = jsProjectDir + '/src'
+def jsPublicDir = jsProjectDir + '/public'
+def packageJsonPath = jsProjectDir + '/package.json'
+
+node {
+    version = '10.13.0'
+    yarnVersion = '1.15.2'
+}
+
+task rmOldApp(type: Delete) {
+}
+
+task copy(type: Copy) {
+    doFirst {
+        delete '../starter-app-backend/resources/static/'
+    } 
+    from(jsBuildDir) {
+        include '**'
+        include 'static/**'
+    }
+    into '../starter-app-backend/resources/static'
+}
+
+yarn_build.dependsOn yarn_install
+rmOldApp.dependsOn yarn_build
+copy.dependsOn rmOldApp
+build.dependsOn copy
