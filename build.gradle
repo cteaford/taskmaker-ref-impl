@@ -1,6 +1,13 @@
 allprojects {
+    apply plugin: 'idea'
     repositories {
         mavenCentral()
         jcenter()
+    }
+    idea {
+        module {
+            downloadJavadoc = true
+            downloadSources = true
+        }
     }
 }

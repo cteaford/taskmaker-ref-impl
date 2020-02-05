@@ -1,0 +1,69 @@
+package com.example
+
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.ConcurrentMap
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+abstract class Task(val n: String) 
+abstract class TaskWithPayload<T>(val payload: T, val n: String): Task(n)
+
+interface Handler<T: Task> {
+    fun id(): String
+    fun handle(t:T): T
+}
+
+private data class ComposedHandler<T: Task>(val id: String, val from: (T)->T): Handler<T> {
+    override fun id() = id
+    override fun handle(t: T) = from(t)
+}
+
+data class Channel(val tasks: ArrayBlockingQueue<Task>)
+
+data class Server(
+    val cs: ConcurrentHashMap<String, Channel<*>>,
+    val hs: ConcurrentHashMap<String, Handler<*>>) {
+    fun make(t: Task): Boolean {
+        if(cs.containsKey(t.n)) {
+            cs.get(t.n).add(t)
+        } else {
+            cs.put(t.n, Channel(new ArrayBlockingQueue<Task>(1000)))
+        }
+        return true
+    }
+    fun register<T>(h: Handler<T>): Boolean {
+        if(hs.containsKey(h.id())) {
+            val f = hs.get(h.id())
+            val g = {(t: T) -> h.handle(t)}
+            hs.put(h.id(), ComposedHandler(h.id, compose(f, g)))
+        } else {
+            hs.put(h.id, h)
+        }
+        return true
+    }
+
+    private var shouldContinue: Boolean = true
+    @Synchronized fun start(): Unit {
+        launch {
+            while(shouldContinue) {
+                val ks = cs.keySet().iterator()
+                while(ks.hasNext()) { //k is task name
+                    val key = ks.next()
+                    val handler = hs.get(k)
+                    val work = List()
+                    cs.get(k).tasks.drainTo(work, 1000)//drain up to 1000 tasks
+                    launch {
+                        work.forEach({t -> handler.handle(t)})
+                    }
+                }
+            }
+        }
+    }
+
+    @Synchronized fun stop(): Unit {
+        shouldContinue = false
+    }
+    
+    private fun compose<A,B,C>(f:(B)->C, g:(A)->B): (A)->C = {(x:A) -> f(g(x))}
+}

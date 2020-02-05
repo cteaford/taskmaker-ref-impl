@@ -1,75 +1,53 @@
 import React, {useState, useEffect} from 'react';
 import './App.css';
-import axios from 'axios';
 import Button from '@material-ui/core/Button'
 import Container from '@material-ui/core/Container'
 import Card from '@material-ui/core/Card';
 import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import { makeStyles } from '@material-ui/styles';
-import { createSlice, configureStore } from 'redux-starter-kit';
 import { useSelector } from 'react-redux';
+import { store, addThing } from './State'
+import { Input, TextField } from '@material-ui/core';
 
 const styles = makeStyles(theme => ({
     mainContent: {
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'space-evenly',
         height: '25rem'
+    },
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between'
     }
 }))
 
-const caseSlice = createSlice({
-    name: 'case',
-    initialState: {text: "placeholder", upper: false},
-    reducers: {
-        changeCase: state => updateCase(!state.upper),
-        caseChange: (state, action) => {
-            state.text = action.payload
-            state.upper = !state.upper
-        }
-    }
-})
-
-const store = configureStore({
-    reducer: caseSlice.reducer
-})
-
-const {
-    actions: {changeCase, caseChange}
-} = caseSlice
-
-const updateCase = (upper) => {
-    const url = upper ? 'http://localhost:8080/upper' : 'http://localhost:8080/'
-    axios.get(url)
-        .then(res => {
-            const text = res.data;
-            store.dispatch(caseChange(text))
-        })
-}
-
 function App() {
+
     const useStyles = styles()
 
-    useEffect(() => {
-        changeCase()
-    }, [])
-
-    const clickHandler = () => {
-        store.dispatch(changeCase())
+    const makeThing = (e) => {
+        e.preventDefault()
+        store.dispatch(addThing({ name: e.target.thang.value }))
     }
+
+    const things = useSelector(s => s.things.things)
 
     return (
         <Container className={useStyles.mainContent} maxWidth="sm">
+            <form onSubmit={makeThing} className={useStyles.form} noValidate autoComplete="off">
+                <TextField id="thing-name" name="thang" label="Name your thing"></TextField>
+                <Input type="submit" value="Make a thing"></Input>
+            </form>
             <Card>
-                <CardContent>{useSelector(state => state.text)}</CardContent>
-                <CardActions>
-                    <Button onClick={clickHandler} size="small">Smoll</Button>
-                </CardActions>
+                <CardContent>My Things</CardContent>
+                {things.map(t => <CardContent>{t.name}</CardContent>)}
             </Card>
         </Container>
     )
 }
 
-export { store }
 export default App

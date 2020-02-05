@@ -14,9 +14,6 @@ node {
     yarnVersion = '1.15.2'
 }
 
-task rmOldApp(type: Delete) {
-}
-
 task copy(type: Copy) {
     doFirst {
         delete '../starter-app-backend/resources/static/'
@@ -29,6 +26,5 @@ task copy(type: Copy) {
 }
 
 yarn_build.dependsOn yarn_install
-rmOldApp.dependsOn yarn_build
-copy.dependsOn rmOldApp
-build.dependsOn copy
+build.dependsOn yarn_build
+copy.dependsOn build
